@@ -118,3 +118,5 @@ npm test
 ```
 
 The [validation report](validation/README.md) records manual expectations for synthetic fixtures against five pinned public workflows, the diff-limit boundary tests, and known risks. It does **not** compare against observed GitHub executions.
+
+For the code layout, data flow, and documentation maintenance guidance, see the [architecture and maintenance guide](docs/architecture.md).
