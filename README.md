@@ -25,14 +25,28 @@ Proposed workflow ─┘
 | **skip** | The supported trigger filters do not match the fixture. |
 | **unknown** | The analyzer cannot safely determine eligibility. |
 
+## Install
+
+Requires Git, npm, and **Node.js 20.19+, 22.12+, or 24+**. Install into `~/.local` without sudo:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/meow687687/caver-ci/main/install.sh | sh
+```
+
+Ensure `~/.local/bin` is on your `PATH`. To install elsewhere, use `curl -fsSL https://raw.githubusercontent.com/meow687687/caver-ci/main/install.sh | CAVER_CI_PREFIX="$HOME/my-prefix" sh`. The installer downloads the current `main` branch, installs build dependencies, and builds the CLI. To inspect the script before running it, [read install.sh](install.sh).
+
 ## Quick start
 
-Requires **Node.js 20.19+** and npm.
+For a local checkout, install dependencies and build:
 
 ```sh
 npm ci
 npm run build
+```
 
+Run the included example from the checkout (use `caver-ci` in place of `node dist/cli.js` after installing):
+
+```sh
 node dist/cli.js analyze \
   --platform github.com \
   --base fixtures/base.yml \
