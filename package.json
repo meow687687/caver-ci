@@ -1,0 +1,10 @@
+{
+  "name": "caver-ci",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": { "caver-ci": "./dist/cli.js" },
+  "scripts": { "build": "tsc", "typecheck": "tsc --noEmit", "test": "vitest run" },
+  "dependencies": { "commander": "^14.0.0", "picomatch": "^4.0.0", "yaml": "^2.8.0" },
+  "devDependencies": { "@types/node": "^24.0.0", "@types/picomatch": "^4.0.0", "typescript": "^5.9.0", "vitest": "^4.0.0" }
+}

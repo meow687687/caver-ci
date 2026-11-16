@@ -1,0 +1,6 @@
+[
+  { "id": "PR-101", "baseBranch": "main", "action": "opened", "changedFiles": ["src/app.ts"], "filesComplete": true },
+  { "id": "PR-102", "baseBranch": "main", "action": "synchronize", "changedFiles": ["src/generated/client.ts"], "filesComplete": true },
+  { "id": "PR-103", "baseBranch": "main", "action": "opened", "changedFiles": ["docs/guide.md"], "filesComplete": true },
+  { "id": "PR-104", "baseBranch": "main", "action": "opened", "changedFiles": [], "filesComplete": false }
+]
