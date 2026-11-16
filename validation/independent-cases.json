@@ -1,0 +1,7 @@
+[
+  {"id":"exclude", "patterns":["src/**","!src/generated/**"], "branch":"main", "files":["src/generated/client.ts"], "complete":true, "expected":"skip"},
+  {"id":"reinclude", "patterns":["src/**","!src/generated/**","src/generated/safe/**"], "branch":"main", "files":["src/generated/safe/client.ts"], "complete":true, "expected":"run"},
+  {"id":"exclude-again", "patterns":["src/**","src/generated/safe/**","!src/generated/**"], "branch":"main", "files":["src/generated/safe/client.ts"], "complete":true, "expected":"skip"},
+  {"id":"wrong-branch", "patterns":["src/**"], "branch":"feature", "files":["src/app.ts"], "complete":true, "expected":"skip"},
+  {"id":"missing-files", "patterns":["src/**"], "branch":"main", "files":[], "complete":false, "expected":"unknown"}
+]

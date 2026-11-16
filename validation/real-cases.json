@@ -1,0 +1,292 @@
+[
+  {
+    "id": "actions-checkout-test.yml:source",
+    "workflow": "actions-checkout-test.yml",
+    "pr": {
+      "id": "source",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "actions-checkout-test.yml:markdown",
+    "workflow": "actions-checkout-test.yml",
+    "pr": {
+      "id": "markdown",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "README.md"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "actions-checkout-test.yml:activity",
+    "workflow": "actions-checkout-test.yml",
+    "pr": {
+      "id": "activity",
+      "baseBranch": "main",
+      "action": "labeled",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "skip",
+    "classification": "definite"
+  },
+  {
+    "id": "actions-checkout-test.yml:incomplete",
+    "workflow": "actions-checkout-test.yml",
+    "pr": {
+      "id": "incomplete",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [],
+      "filesComplete": false
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "actions-checkout-check-dist.yml:source",
+    "workflow": "actions-checkout-check-dist.yml",
+    "pr": {
+      "id": "source",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "unsupported"
+  },
+  {
+    "id": "actions-checkout-check-dist.yml:markdown",
+    "workflow": "actions-checkout-check-dist.yml",
+    "pr": {
+      "id": "markdown",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "README.md"
+      ],
+      "filesComplete": true
+    },
+    "expected": "skip",
+    "classification": "unsupported"
+  },
+  {
+    "id": "actions-checkout-check-dist.yml:activity",
+    "workflow": "actions-checkout-check-dist.yml",
+    "pr": {
+      "id": "activity",
+      "baseBranch": "main",
+      "action": "labeled",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "skip",
+    "classification": "unsupported"
+  },
+  {
+    "id": "actions-checkout-check-dist.yml:incomplete",
+    "workflow": "actions-checkout-check-dist.yml",
+    "pr": {
+      "id": "incomplete",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [],
+      "filesComplete": false
+    },
+    "expected": "unknown",
+    "classification": "unknown-incomplete"
+  },
+  {
+    "id": "actions-setup-node-basic-validation.yml:source",
+    "workflow": "actions-setup-node-basic-validation.yml",
+    "pr": {
+      "id": "source",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "unsupported"
+  },
+  {
+    "id": "actions-setup-node-basic-validation.yml:markdown",
+    "workflow": "actions-setup-node-basic-validation.yml",
+    "pr": {
+      "id": "markdown",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "README.md"
+      ],
+      "filesComplete": true
+    },
+    "expected": "skip",
+    "classification": "unsupported"
+  },
+  {
+    "id": "actions-setup-node-basic-validation.yml:activity",
+    "workflow": "actions-setup-node-basic-validation.yml",
+    "pr": {
+      "id": "activity",
+      "baseBranch": "main",
+      "action": "labeled",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "skip",
+    "classification": "unsupported"
+  },
+  {
+    "id": "actions-setup-node-basic-validation.yml:incomplete",
+    "workflow": "actions-setup-node-basic-validation.yml",
+    "pr": {
+      "id": "incomplete",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [],
+      "filesComplete": false
+    },
+    "expected": "unknown",
+    "classification": "unknown-incomplete"
+  },
+  {
+    "id": "cli-cli-go.yml:source",
+    "workflow": "cli-cli-go.yml",
+    "pr": {
+      "id": "source",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "cli-cli-go.yml:markdown",
+    "workflow": "cli-cli-go.yml",
+    "pr": {
+      "id": "markdown",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "README.md"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "cli-cli-go.yml:activity",
+    "workflow": "cli-cli-go.yml",
+    "pr": {
+      "id": "activity",
+      "baseBranch": "main",
+      "action": "labeled",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "skip",
+    "classification": "definite"
+  },
+  {
+    "id": "cli-cli-go.yml:incomplete",
+    "workflow": "cli-cli-go.yml",
+    "pr": {
+      "id": "incomplete",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [],
+      "filesComplete": false
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "expressjs-express-ci.yml:source",
+    "workflow": "expressjs-express-ci.yml",
+    "pr": {
+      "id": "source",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "expressjs-express-ci.yml:markdown",
+    "workflow": "expressjs-express-ci.yml",
+    "pr": {
+      "id": "markdown",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [
+        "README.md"
+      ],
+      "filesComplete": true
+    },
+    "expected": "run",
+    "classification": "definite"
+  },
+  {
+    "id": "expressjs-express-ci.yml:activity",
+    "workflow": "expressjs-express-ci.yml",
+    "pr": {
+      "id": "activity",
+      "baseBranch": "main",
+      "action": "labeled",
+      "changedFiles": [
+        "src/index.js"
+      ],
+      "filesComplete": true
+    },
+    "expected": "skip",
+    "classification": "definite"
+  },
+  {
+    "id": "expressjs-express-ci.yml:incomplete",
+    "workflow": "expressjs-express-ci.yml",
+    "pr": {
+      "id": "incomplete",
+      "baseBranch": "main",
+      "action": "opened",
+      "changedFiles": [],
+      "filesComplete": false
+    },
+    "expected": "run",
+    "classification": "definite"
+  }
+]
