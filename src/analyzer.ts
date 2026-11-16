@@ -49,7 +49,8 @@ function matches(value: string, patterns: string[]): boolean {
   return included;
 }
 
-export function analyzeWorkflow(source: string, pr: PullRequestFixture): Result {
+export function analyzeWorkflow(source: string, pr: PullRequestFixture, platform: string): Result {
+  if (platform !== 'github.com') return result('unknown', 'Unsupported or unspecified platform; only github.com is supported');
   let doc;
   try { doc = parseDocument(source, { uniqueKeys: true }); } catch { return result('unknown', 'Invalid workflow YAML'); }
   if (doc.errors.length) return result('unknown', 'Invalid workflow YAML');

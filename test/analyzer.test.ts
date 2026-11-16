@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeWorkflow, parseFixtures, type PullRequestFixture } from '../src/analyzer.js';
 
 const pr: PullRequestFixture = { id: '1', baseBranch: 'main', action: 'opened', changedFiles: ['src/app.ts'], filesComplete: true };
-const check = (yaml: string, override: Partial<PullRequestFixture> = {}) => analyzeWorkflow(yaml, { ...pr, ...override }).decision;
+const check = (yaml: string, override: Partial<PullRequestFixture> = {}) => analyzeWorkflow(yaml, { ...pr, ...override }, 'github.com').decision;
 
 describe('workflow trigger eligibility', () => {
   it('supports string, list and mapping event forms', () => {

@@ -1,37 +1,106 @@
-# caver-ci v0.1
+# caver-ci
 
-A read-only comparison of GitHub Actions `pull_request` trigger eligibility for historical PR fixtures. It parses YAML as data and never runs workflow commands. A `run` result means the supported trigger filters match the supplied fixture; `skip` means those filters do not match. Both are conditional on accurate inputs and the limitations below. `unknown` means the analyzer cannot decide. None proves whether GitHub executed a workflow or a job passed.
+**See how a workflow change affects pull request trigger eligibility.**
 
-## Usage
+caver-ci compares two GitHub Actions workflow files against pull request fixtures and explains which triggers match, which do not, and which cannot be determined. It reads YAML as data and never executes workflow commands.
 
-Requires Node.js 20.19+ and npm.
+`GitHub.com` · `Read-only` · `No API required` · `v0.1`
+
+> [!IMPORTANT]
+> A `run` decision means the supported trigger filters match the supplied fixture. It does **not** prove that a workflow ran or that a job passed. Results depend on accurate inputs and the limitations below.
+
+---
+
+## How it works
+
+```text
+Original workflow ─┐
+                   ├─ compare against PR fixtures ──► before / after decisions
+Proposed workflow ─┘
+```
+
+| Decision | Meaning |
+| --- | --- |
+| **run** | The supported trigger filters match the fixture. |
+| **skip** | The supported trigger filters do not match the fixture. |
+| **unknown** | The analyzer cannot safely determine eligibility. |
+
+## Quick start
+
+Requires **Node.js 20.19+** and npm.
 
 ```sh
 npm ci
 npm run build
-node dist/cli.js analyze --base fixtures/base.yml --proposed fixtures/proposed.yml --prs fixtures/prs.json
-npm test
-npm run typecheck
+
+node dist/cli.js analyze \
+  --platform github.com \
+  --base fixtures/base.yml \
+  --proposed fixtures/proposed.yml \
+  --prs fixtures/prs.json
 ```
 
-The CLI prints JSON with each fixture's `before` and `after` decision and reason. `change` is `unchanged`, `run -> skip`, `skip -> run`, or `unknown` if either side is unknown. Invalid input files or fixture JSON cause a nonzero exit; an uncertain workflow decision is reported in JSON, not treated as a CLI error.
+The included example compares four PR fixtures. The JSON output includes each decision and its reason, plus the change between them:
 
-Fixtures are a JSON array, for example:
+| Fixture | Before | After | Change |
+| --- | --- | --- | --- |
+| PR-101 | run | run | unchanged |
+| PR-102 | run | skip | run → skip |
+| PR-103 | skip | run | skip → run |
+| PR-104 | unknown | unknown | unknown |
+
+The CLI reports both the requested `platform` and `supportedPlatform`. The required `--platform` value must identify the actual target. Only `github.com` is supported; other values, including GitHub Enterprise Server, produce `unknown` decisions. Invalid input files or fixture JSON cause a nonzero exit. An uncertain decision is reported in JSON rather than treated as a CLI error.
+
+## Bring your own fixtures
+
+Pass a JSON array of pull requests with `--prs`:
 
 ```json
-[{ "id": "PR-1", "baseBranch": "main", "action": "opened", "changedFiles": ["src/app.ts"], "filesComplete": true }]
+[
+  {
+    "id": "PR-1",
+    "baseBranch": "main",
+    "action": "opened",
+    "changedFiles": ["src/app.ts"],
+    "filesComplete": true
+  }
+]
 ```
 
-`id` must be unique. `baseBranch` is the PR's target branch, `action` is the actual GitHub pull request activity type, and `changedFiles` contains repository-relative paths from the PR diff. Set `filesComplete` to `false` if the list is incomplete; path-filtered decisions then return `unknown`. The caller is responsible for collecting accurate historical data and providing a complete list. No GitHub access is performed.
+| Field | Description |
+| --- | --- |
+| `id` | Unique fixture identifier. |
+| `baseBranch` | The PR's target branch. |
+| `action` | The actual pull request activity type, such as `opened`. |
+| `changedFiles` | Repository-relative paths from the PR diff. |
+| `filesComplete` | Whether the supplied list contains the complete relevant diff. |
 
-## Scope and limitations
+The caller is responsible for collecting accurate historical data. Set `filesComplete` to `false` when the list is incomplete; path-filtered decisions then return `unknown` when the file list matters. caver-ci does not contact GitHub.
 
-- Supports `on` as a string, event list, or mapping, and `pull_request` activity `types`, `branches`, `branches-ignore`, `paths`, and `paths-ignore`. Branch and path filters both must match. Default activity types are `opened`, `synchronize`, and `reopened`.
-- Patterns support literal characters, `*` within a path segment, `**` as a whole segment, and ordered `!` exclusions and re-inclusions in positive filter lists. At least one positive pattern is required. Ignore lists use positive patterns. Unsupported syntax, including `?`, character classes, braces, escapes, and extglobs, returns `unknown`; this is intentionally narrower than GitHub's pattern language.
-- An empty complete changed-file list does not match a path filter. An incomplete list or a list over 3,000 files is unknown when paths matter. GitHub.com documents a 3,000-file evaluation limit, while GitHub Enterprise Server 3.19 documents 300; v0.1 does not model the Enterprise limit and may issue an incorrect definite result there. GitHub uses a three-dot PR diff and documents diff-timeout behavior; these are not fully simulated, and even a complete fixture may differ from GitHub's evaluated file set. Supply the exact relevant file set when possible.
-- Only the `pull_request` event is analyzed. Other events, including `pull_request_target`, do not establish eligibility for this event. Unsupported PR options, activity types, YAML aliases, malformed YAML, and unsupported patterns yield `unknown` where encountered.
-- This does not validate all workflow schema, evaluate jobs or `if` expressions, required checks, permissions, concurrency, repository settings, workflow availability, GitHub outages, or actual runs. Results depend on fixture accuracy and should not be used as proof of safety.
+## Supported behavior
 
-GitHub references: [workflow syntax and filter patterns](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpull_requestpull_request_targetbranchesbranches-ignore), [path filtering and diff limits](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#git-diff-comparisons), and [pull request events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+- `pull_request` triggers expressed as a string, event list, or mapping.
+- Activity `types`, `branches`, `branches-ignore`, `paths`, and `paths-ignore`. Branch and path filters must both match when both are present. The default activity types are `opened`, `synchronize`, and `reopened`.
+- Literal patterns, `*` within a path segment, and `**` as a whole segment. Positive filter lists support ordered `!` exclusions and re-inclusions and require at least one positive pattern; ignore lists use positive patterns.
 
-See [v0.1 validation](validation/README.md) for pinned public workflows, manual expectations, results, and known discrepancies.
+Unsupported syntax—including `?`, character classes, braces, escapes, and extglobs—returns `unknown`. This is a narrower pattern language than GitHub's.
+
+## Limits to keep in mind
+
+- **Platform:** Only GitHub.com is supported. GitHub Enterprise Server 3.19 documents a different diff limit and must not be declared as GitHub.com.
+- **Changed files:** An empty complete list does not match a path filter. An incomplete list or a list over 3,000 files is `unknown` when paths matter. Fixture order is not assumed to match GitHub diff order. At or below 3,000 files, results assume the fixture contains the complete relevant three-dot PR diff.
+- **Server behavior:** Diff timeouts and other server-side exceptions are not simulated. A fixture may differ from the diff GitHub evaluates.
+- **Workflow coverage:** Only `pull_request` is analyzed. Other events, including `pull_request_target`, do not establish eligibility for this event. Unsupported PR options, activity types, YAML aliases, and malformed YAML return `unknown` where encountered.
+- **Execution:** Workflow schema, jobs, `if` expressions, required checks, permissions, concurrency, repository settings, workflow availability, outages, and actual runs are not fully evaluated. Results are not proof of safety.
+
+GitHub references: [workflow syntax and filter patterns](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpull_requestpull_request_targetbranchesbranches-ignore) · [path filtering and diff limits](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#git-diff-comparisons) · [pull request events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)
+
+## Validation & development
+
+```sh
+npm run build
+npm run typecheck
+npm test
+```
+
+The [validation report](validation/README.md) records manual expectations for synthetic fixtures against five pinned public workflows, the diff-limit boundary tests, and known risks. It does **not** compare against observed GitHub executions.
