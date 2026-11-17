@@ -65,6 +65,8 @@ The included example compares four PR fixtures. The JSON output includes each de
 
 The CLI reports both the requested `platform` and `supportedPlatform`. The required `--platform` value must identify the actual target. Only `github.com` is supported; other values, including GitHub Enterprise Server, produce `unknown` decisions. Invalid input files or fixture JSON cause a nonzero exit. An uncertain decision is reported in JSON rather than treated as a CLI error.
 
+Invalid fixture records report the array index and the field that needs correction.
+
 ## Bring your own fixtures
 
 Pass a JSON array of pull requests with `--prs`:
@@ -116,6 +118,8 @@ npm run build
 npm run typecheck
 npm test
 ```
+
+Pull requests run type checking, build, and tests on the supported Node.js minimums. A separate package smoke job installs the packed CLI in a temporary prefix and runs the README example. CI audits the locked dependency tree weekly.
 
 The [validation report](validation/README.md) records manual expectations for synthetic fixtures against five pinned public workflows, the diff-limit boundary tests, and known risks. It does **not** compare against observed GitHub executions.
 

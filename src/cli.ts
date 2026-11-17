@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import { Command } from 'commander';
-import { analyzeWorkflow, parseFixtures } from './analyzer.js';
+import { analyzeWorkflow } from './analyzer.js';
+import { parseFixtures } from './fixtures.js';
 
 const program = new Command();
 program.name('caver-ci').description('Compare pull request trigger eligibility on GitHub.com').version('0.1.0');

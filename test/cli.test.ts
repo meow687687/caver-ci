@@ -19,7 +19,7 @@ beforeAll(() => {
 afterAll(() => { if (dir) rmSync(dir, { recursive: true, force: true }); });
 
 describe('platform scope and read-only CLI', () => {
-  const run = (platform?: string) => spawnSync(process.execPath, [cli, 'analyze', ...(platform === undefined ? [] : ['--platform', platform]), '--base', workflow, '--proposed', workflow, '--prs', prs], { encoding: 'utf8' });
+  const run = (platform?: string, fixtureFile = prs, baseFile = workflow) => spawnSync(process.execPath, [cli, 'analyze', ...(platform === undefined ? [] : ['--platform', platform]), '--base', baseFile, '--proposed', workflow, '--prs', fixtureFile], { encoding: 'utf8' });
   it('requires an explicit platform', () => { expect(run().status).not.toBe(0); });
   it('reports GitHub.com scope and does not execute or modify inputs', () => {
     const before = [readFileSync(workflow, 'utf8'), readFileSync(prs, 'utf8')];
@@ -33,5 +33,26 @@ describe('platform scope and read-only CLI', () => {
     const output = run('ghes-3.19');
     expect(output.status).toBe(0);
     expect(JSON.parse(output.stdout)).toMatchObject({ platform: 'ghes-3.19', supportedPlatform: 'github.com', comparisons: [{ before: { decision: 'unknown' }, after: { decision: 'unknown' }, change: 'unknown' }] });
+  });
+  it('reports invalid fixture fields without a stack trace', () => {
+    const invalidFixtures = join(dir, 'invalid-prs.json');
+    writeFileSync(invalidFixtures, JSON.stringify([{ id: '1', baseBranch: '', action: 'opened', changedFiles: [], filesComplete: true }]));
+    const output = run('github.com', invalidFixtures);
+    expect(output.status).not.toBe(0);
+    expect(output.stderr).toContain('index 0: expected non-empty baseBranch');
+    expect(output.stderr).not.toMatch(/\n\s+at\s/);
+  });
+  it('reports invalid JSON and unreadable files as CLI errors', () => {
+    const invalidJson = join(dir, 'malformed-prs.json');
+    writeFileSync(invalidJson, '[');
+    const jsonOutput = run('github.com', invalidJson);
+    expect(jsonOutput.status).not.toBe(0);
+    expect(jsonOutput.stderr).toContain('Error:');
+    expect(jsonOutput.stderr).not.toMatch(/\n\s+at\s/);
+
+    const fileOutput = run('github.com', prs, join(dir, 'missing-workflow.yml'));
+    expect(fileOutput.status).not.toBe(0);
+    expect(fileOutput.stderr).toContain('Error:');
+    expect(fileOutput.stderr).not.toMatch(/\n\s+at\s/);
   });
 });

@@ -1,0 +1,76 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '23 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify on Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['20.19.0', '22.12.0', '24.0.0']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm test
+
+  package-smoke:
+    name: Verify installed package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Install packed CLI into a temporary prefix and run the README example
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(npm pack --silent)"
+          prefix="$(mktemp -d)"
+          trap 'rm -rf "$prefix" "$archive"' EXIT
+          npm install --global --prefix "$prefix" "./$archive"
+          "$prefix/bin/caver-ci" analyze \
+            --platform github.com \
+            --base fixtures/base.yml \
+            --proposed fixtures/proposed.yml \
+            --prs fixtures/prs.json \
+            | node --input-type=module -e '
+              let input = "";
+              for await (const chunk of process.stdin) input += chunk;
+              const output = JSON.parse(input);
+              if (output.comparisons.length !== 4 || output.platform !== "github.com") {
+                throw new Error("Installed CLI returned an unexpected result");
+              }
+            '
+
+  dependency-audit:
+    name: Audit locked dependencies
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: npm
+      - run: npm ci
+      - run: npm audit --audit-level=high
