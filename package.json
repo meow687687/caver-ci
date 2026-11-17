@@ -1,6 +1,6 @@
 {
   "name": "caver-ci",
-  "version": "0.3.0",
+  "version": "0.3.0-alpha.0",
   "private": true,
   "license": "MIT",
   "repository": {
@@ -12,7 +12,7 @@
   },
   "type": "module",
   "bin": {
-    "caver-ci": "./dist/cli.js"
+    "caver-ci": "dist/cli.js"
   },
   "files": [
     "dist/"
