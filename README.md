@@ -85,7 +85,22 @@ For an install into `~/.local`, the source installer clones `main`, builds the C
 curl -fsSL https://raw.githubusercontent.com/meow687687/caver-ci/main/install.sh | sh
 ```
 
-The v0.3.0 npm package is private and is not published. caver-ci is installed from a source checkout or with the source installer.
+The `0.3.0-alpha.0` test build will be distributed through GitHub Releases, not the npm registry. After release, download the `caver-ci-0.3.0-alpha.0.tgz` asset and install it locally with:
+
+```sh
+npm install --global ./caver-ci-0.3.0-alpha.0.tgz
+```
+
+To build from the tagged source instead:
+
+```sh
+git clone --depth 1 --branch v0.3.0-alpha.0 https://github.com/meow687687/caver-ci.git
+cd caver-ci
+npm ci
+npm run build
+```
+
+The package remains private to prevent accidental registry publication.
 
 ## Read the results
 

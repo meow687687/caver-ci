@@ -11,7 +11,7 @@ import {
   type GitHubRepositoryHistory,
 } from './github.js';
 
-const CLI_VERSION = '0.3.0';
+const CLI_VERSION = '0.3.0-alpha.0';
 type HistoryFetcher = typeof collectGitHubRepositoryHistory;
 type OutputFormat = 'json' | 'text';
 
