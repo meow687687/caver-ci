@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { readFile, realpath } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
+import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Command, InvalidArgumentError } from 'commander';
 import { analyzeWorkflow } from './analyzer.js';
 import { parseFixtures } from './fixtures.js';
@@ -13,8 +13,23 @@ import {
   type GitHubRepositoryHistory,
 } from './github.js';
 
-const packageMetadata = JSON.parse(readFileSync(createRequire(import.meta.url).resolve('../package.json'), 'utf8')) as { version: string };
-const CLI_VERSION = packageMetadata.version;
+function readPackageVersion(): string {
+  let directory = dirname(fileURLToPath(import.meta.url));
+  while (true) {
+    try {
+      const metadata = JSON.parse(readFileSync(join(directory, 'package.json'), 'utf8')) as { name?: string; version?: unknown };
+      if (metadata.name === 'caver-ci' && typeof metadata.version === 'string') return metadata.version;
+    } catch {
+      // Keep looking upward; test builds may live in a nested temporary directory.
+    }
+    const parent = dirname(directory);
+    if (parent === directory) break;
+    directory = parent;
+  }
+  throw new Error('Could not find caver-ci package metadata to determine the CLI version');
+}
+
+const CLI_VERSION = readPackageVersion();
 type HistoryFetcher = typeof collectGitHubRepositoryHistory;
 type OutputFormat = 'json' | 'text';
 

@@ -175,7 +175,7 @@ describe('platform scope and read-only CLI', () => {
   it('rejects API limits above 100 before contacting GitHub', async () => {
     const fetchHistory = vi.fn();
     const program = createProgram(fetchHistory).exitOverride();
-    program.commands[0]?.exitOverride();
+    program.commands.find(command => command.name() === 'analyze')?.exitOverride();
     await expect(program.parseAsync([
       'node', 'caver-ci', 'analyze', '--repo', 'acme/demo', '--limit', '101', '--platform', 'github.com',
       '--base', workflow, '--proposed', workflow,
@@ -185,13 +185,22 @@ describe('platform scope and read-only CLI', () => {
 
   it('shows command help and rejects unknown output formats clearly', async () => {
     const program = createProgram();
-    expect(program.commands[0]?.helpInformation()).toContain('--format <format>');
+    expect(program.commands.find(command => command.name() === 'analyze')?.helpInformation()).toContain('--format <format>');
     const invalid = createProgram().exitOverride();
-    invalid.commands[0]?.exitOverride();
+    invalid.commands.find(command => command.name() === 'analyze')?.exitOverride();
     await expect(invalid.parseAsync([
       'node', 'caver-ci', 'analyze', '--platform', 'github.com', '--base', workflow, '--proposed', workflow,
       '--prs', prs, '--format', 'yaml',
     ])).rejects.toThrow('format must be json or text');
+  });
+
+  it('prints the package version through both version entry points', () => {
+    const packageJson = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as { version: string };
+    for (const args of [['--version'], ['-v'], ['version']]) {
+      const output = spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8' });
+      expect(output.status).toBe(0);
+      expect(output.stdout.trim()).toBe(packageJson.version);
+    }
   });
 
   it('rejects ambiguous input modes and never fetches unsupported platforms', async () => {
