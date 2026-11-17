@@ -1,6 +1,6 @@
 export interface PullRequestFixture {
   id: string;
-  baseBranch: string;
+  baseBranch: string | null;
   action: string;
   changedFiles: string[];
   filesComplete: boolean;

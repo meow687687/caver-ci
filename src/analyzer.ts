@@ -37,11 +37,17 @@ export function analyzeWorkflow(source: string, pr: PullRequestFixture, platform
   }
   if (!types.includes(pr.action)) return result('skip', 'Pull request activity does not match');
 
-  if (config.branches && !matchesPatterns(pr.baseBranch, config.branches)) {
-    return result('skip', 'Base branch does not match');
+  if (config.branches) {
+    if (pr.baseBranch === null) return result('unknown', 'Base branch metadata is unavailable');
+    if (!matchesPatterns(pr.baseBranch, config.branches)) {
+      return result('skip', 'Base branch does not match');
+    }
   }
-  if (config['branches-ignore'] && matchesPatterns(pr.baseBranch, config['branches-ignore'])) {
-    return result('skip', 'Base branch is ignored');
+  if (config['branches-ignore']) {
+    if (pr.baseBranch === null) return result('unknown', 'Base branch metadata is unavailable');
+    if (matchesPatterns(pr.baseBranch, config['branches-ignore'])) {
+      return result('skip', 'Base branch is ignored');
+    }
   }
 
   if (config.paths || config['paths-ignore']) {

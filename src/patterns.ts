@@ -9,7 +9,7 @@ export function validPatterns(patterns: string[], allowNegative: boolean): boole
     if (
       (negative && !allowNegative) ||
       !pattern ||
-      /[\[\]{}()|+?\\!]/.test(pattern) ||
+      [...'[]{}()|+?\\!'].some(character => pattern.includes(character)) ||
       pattern.split('/').some(segment => segment.includes('**') && segment !== '**') ||
       pattern.startsWith('/') ||
       pattern.includes('//') ||
