@@ -99,7 +99,7 @@ The caller is responsible for collecting accurate historical data. Set `filesCom
 - Activity `types`, `branches`, `branches-ignore`, `paths`, and `paths-ignore`. Branch and path filters must both match when both are present. The default activity types are `opened`, `synchronize`, and `reopened`.
 - Literal patterns, `*` within a path segment, and `**` as a whole segment. Positive filter lists support ordered `!` exclusions and re-inclusions and require at least one positive pattern; ignore lists use positive patterns.
 
-Unsupported syntax—including `?`, character classes, braces, escapes, and extglobs—returns `unknown`. This is a narrower pattern language than GitHub's.
+Unsupported syntax—including `?`, character classes, braces, escapes, pipes, and extglobs—returns `unknown`. This is a narrower pattern language than GitHub's.
 
 ## Limits to keep in mind
 

@@ -12,7 +12,7 @@ These are offline, synthetic PR inputs against five **real, unmodified workflow 
 
 `real-cases.json` holds the manually specified oracle. For each workflow: an opened PR changing source is eligible; an opened PR changing README is eligible unless `paths-ignore: ['**.md']` applies; a labeled event is skipped by default; an incomplete file list is uncertain only where path filtering matters. All use base branch `main` as a synthetic input; these PR triggers do not filter branches. Upstream push branch filters are irrelevant to a `pull_request` event. `independent-cases.json` covers negative ordering, re-inclusion, branch mismatch, and incomplete files. `test/validation.test.ts` executes these fixtures and the 300/301 and 3000/3001 boundaries using an explicit GitHub.com target.
 
-The unit suite also covers ordered branch-filter exclusions/re-inclusions, unsupported path forms, and field-specific fixture validation. CI runs typecheck, build, and all tests on the supported Node.js minimums, smoke-tests the packed CLI in a temporary install prefix, and audits locked dependencies weekly. These checks verify the local implementation and package; they do not establish equivalence with observed GitHub runs.
+The unit suite also covers ordered branch-filter exclusions/re-inclusions, unsupported path forms including pipe alternation, and field-specific fixture validation. CI runs typecheck, build, and all tests on the supported Node.js minimums, smoke-tests the packed CLI in a temporary install prefix, and audits locked dependencies weekly. These checks verify the local implementation and package; they do not establish equivalence with observed GitHub runs.
 
 ## Results
 

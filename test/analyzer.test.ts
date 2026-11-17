@@ -35,6 +35,10 @@ describe('workflow trigger eligibility', () => {
     expect(check(yaml, { baseBranch: 'release/old/v1' })).toBe('skip');
     expect(check(yaml, { baseBranch: 'release/old/keep/v1' })).toBe('run');
   });
+  it('returns unknown for pipe alternation in branch patterns', () => {
+    const yaml = "on:\n  pull_request:\n    branches: ['release/main|dev']";
+    expect(check(yaml, { baseBranch: 'dev' })).toBe('unknown');
+  });
   it('does not guess unsupported, malformed or incomplete input', () => {
     expect(check('on: [')).toBe('unknown');
     expect(check('name: CI')).toBe('unknown');
@@ -102,7 +106,7 @@ describe('audit regressions', () => {
     expect(check('on: [pull_request, 2]')).toBe('unknown');
     expect(check('on:\n  pull_request: false')).toBe('unknown');
   });
-  it.each(['src/?.ts', 'src/[ab].ts', 'src/{a,b}.ts', 'src/+(a).ts', 'src/foo**bar', '!docs/**'])('rejects unsupported pattern %s', pattern => {
+  it.each(['src/?.ts', 'src/[ab].ts', 'src/{a,b}.ts', 'src/+(a).ts', 'src/foo**bar', 'release/main|dev', '!docs/**'])('rejects unsupported pattern %s', pattern => {
     expect(check(`on:\n  pull_request:\n    paths: ${JSON.stringify([pattern])}`)).toBe('unknown');
   });
   it('treats unknown types, conflicting filters, and aliases as unknown', () => {
