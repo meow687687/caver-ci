@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { readFile, realpath } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { Command, InvalidArgumentError } from 'commander';
 import { analyzeWorkflow } from './analyzer.js';
@@ -11,7 +13,8 @@ import {
   type GitHubRepositoryHistory,
 } from './github.js';
 
-const CLI_VERSION = '0.3.0-alpha.0';
+const packageMetadata = JSON.parse(readFileSync(createRequire(import.meta.url).resolve('../package.json'), 'utf8')) as { version: string };
+const CLI_VERSION = packageMetadata.version;
 type HistoryFetcher = typeof collectGitHubRepositoryHistory;
 type OutputFormat = 'json' | 'text';
 
@@ -59,19 +62,24 @@ function summary(comparisons: Comparison[]) {
   }, { newlySkipped: 0, newlyTriggered: 0, unchanged: 0, unknown: 0 });
 }
 
+function colorize(value: string, code: number, enabled: boolean): string {
+  return enabled ? `\u001b[${code}m${value}\u001b[0m` : value;
+}
+
 function renderTerminalReport(
   repository: string,
   platform: string,
   comparisons: Comparison[],
   listNote?: string | null,
+  color = false,
 ): string {
   const counts = summary(comparisons);
   const lines = [
-    'caver-ci · workflow trigger comparison',
+    colorize('caver-ci · workflow trigger comparison', 1, color),
     `Evaluated repo: ${repository}`,
     `Platform: ${platform}`,
-    `Sample size: ${comparisons.length}`,
-    `Newly skipped: ${counts.newlySkipped} · Newly triggered: ${counts.newlyTriggered} · Unchanged: ${counts.unchanged} · Unknown: ${counts.unknown}`,
+    `Sample size: ${colorize(String(comparisons.length), 1, color)}`,
+    `Newly skipped: ${colorize(String(counts.newlySkipped), 33, color)} · Newly triggered: ${colorize(String(counts.newlyTriggered), 36, color)} · Unchanged: ${colorize(String(counts.unchanged), 32, color)} · Unknown: ${colorize(String(counts.unknown), 35, color)}`,
   ];
   if (listNote) lines.push(`Collection note: ${listNote}`);
   if (comparisons.length === 0) {
@@ -90,7 +98,8 @@ function renderTerminalReport(
     const reasons = comparison.before.decision === 'unknown' || comparison.after.decision === 'unknown'
       ? [comparison.before, comparison.after].filter(result => result.decision === 'unknown').map(result => result.reason)
       : [comparison.after.reason];
-    lines.push(`  #${comparison.id}  ${comparison.before.decision} → ${comparison.after.decision}  (${label}) — ${[...new Set(reasons)].join('; ')}`);
+    const colorCode = label === 'newly skipped' ? 33 : label === 'newly triggered' ? 36 : label === 'unchanged' ? 32 : 35;
+    lines.push(`  ${colorize(`#${comparison.id}`, 1, color)}  ${comparison.before.decision} → ${comparison.after.decision}  (${colorize(label, colorCode, color)}) — ${[...new Set(reasons)].join('; ')}`);
   }
   lines.push('', 'These are trigger-filter evaluations for the supplied inputs; they do not report observed workflow executions or guarantee CI savings.');
   return lines.join('\n');
@@ -153,7 +162,13 @@ export function createGitHubReport(
 
 export function createProgram(fetchHistory: HistoryFetcher = collectGitHubRepositoryHistory): Command {
   const program = new Command();
-  program.name('caver-ci').description('Compare pull request trigger eligibility on GitHub.com').version(CLI_VERSION);
+  program.name('caver-ci')
+    .description('Compare pull request trigger eligibility on GitHub.com')
+    .version(CLI_VERSION, '-v, --version', 'display version')
+    .showSuggestionAfterError()
+    .showHelpAfterError('\nUse --help to see available commands and options.');
+  program.addHelpText('after', '\nExamples:\n  caver-ci --version\n  caver-ci analyze --platform github.com --base before.yml --proposed after.yml --prs prs.json --format text');
+  program.command('version').description('Display the caver-ci version').action(() => console.log(CLI_VERSION));
   program.command('analyze')
     .description('Compare workflow pull_request trigger filters against fixtures or recent public GitHub PRs')
     .requiredOption('--platform <platform>', 'target platform (only github.com is supported)')
@@ -163,8 +178,10 @@ export function createProgram(fetchHistory: HistoryFetcher = collectGitHubReposi
     .option('--repo <owner/repository>', 'public GitHub.com repository (GitHub REST mode)')
     .option('--limit <number>', `maximum recent pull requests in GitHub API mode (default ${DEFAULT_GITHUB_PULL_REQUEST_LIMIT}, max ${MAX_GITHUB_PULL_REQUEST_LIMIT})`, parseLimit, DEFAULT_GITHUB_PULL_REQUEST_LIMIT)
     .option('--format <format>', 'output format: json (default, script-compatible) or text', parseFormat, 'json')
+    .option('--color', 'force ANSI colors in text output')
+    .option('--no-color', 'disable ANSI colors in text output')
     .addHelpText('after', '\nExamples:\n  caver-ci analyze --platform github.com --base before.yml --proposed after.yml --prs prs.json --format text\n  caver-ci analyze --platform github.com --base before.yml --proposed after.yml --repo owner/repository')
-    .action(async (options: { base: string; proposed: string; prs?: string; repo?: string; limit: number; platform: string; format: OutputFormat }) => {
+    .action(async (options: { base: string; proposed: string; prs?: string; repo?: string; limit: number; platform: string; format: OutputFormat; color?: boolean }) => {
       if (Boolean(options.prs) === Boolean(options.repo)) {
         throw new Error('Choose exactly one input mode: --prs <file> or --repo <owner/repository>');
       }
@@ -176,6 +193,11 @@ export function createProgram(fetchHistory: HistoryFetcher = collectGitHubReposi
         readInput(options.base, 'base workflow'),
         readInput(options.proposed, 'proposed workflow'),
       ]);
+      const forceColor = process.env.FORCE_COLOR;
+      const automaticColor = forceColor !== undefined
+        ? forceColor !== '0'
+        : Boolean(process.stdout.isTTY) && !process.env.NO_COLOR;
+      const useColor = options.format === 'text' && (options.color ?? automaticColor);
 
       if (options.prs) {
         const fixtureContent = await readInput(options.prs, 'PR fixture');
@@ -192,7 +214,7 @@ export function createProgram(fetchHistory: HistoryFetcher = collectGitHubReposi
         };
         console.log(options.format === 'json'
           ? JSON.stringify(report, null, 2)
-          : renderTerminalReport('offline fixtures (repository not specified)', options.platform, comparisons));
+          : renderTerminalReport('offline fixtures (repository not specified)', options.platform, comparisons, undefined, useColor));
         return;
       }
 
@@ -206,7 +228,7 @@ export function createProgram(fetchHistory: HistoryFetcher = collectGitHubReposi
       console.log(options.format === 'json'
         ? JSON.stringify(report, null, 2)
         : renderTerminalReport(report.repository, report.platform, report.comparisons, report.pullRequestListIncompleteReason ??
-          (report.pullRequestListHasMore ? `limited to ${report.requestedLimit} recent pull requests; more are available` : null)));
+          (report.pullRequestListHasMore ? `limited to ${report.requestedLimit} recent pull requests; more are available` : null), useColor));
     });
   return program;
 }

@@ -38,7 +38,7 @@ The analyzer does not calculate diffs. Fixture callers supply the PR's base bran
 
 ## Validation commands
 
-`npm run lint` checks TypeScript source and tests with ESLint. `npm pack --dry-run` invokes `prepack`, which builds `dist/` before npm applies the `files` allowlist. The package ships only compiled runtime modules, `package.json`, and npm's automatically included README and LICENSE; tests, fixtures, credentials, and development configuration stay out. Install the generated tarball into an isolated project and run the `caver-ci` bin link to check the compiled CLI and package entrypoint.
+`npm run lint` checks TypeScript source and tests with ESLint. `npm pack --dry-run` invokes `prepack`, which builds `dist/` before npm applies the `files` allowlist. The package ships only compiled runtime modules, `package.json`, and npm's automatically included README and LICENSE; tests, fixtures, credentials, and development configuration stay out. Install the generated tarball into an isolated project and run the `caver-ci` bin link to check the compiled CLI and package entrypoint. The CLI reads its version from package metadata so source and packaged distributions stay in sync; text-mode color is TTY-aware and can be controlled with `NO_COLOR`, `FORCE_COLOR`, `--color`, and `--no-color`.
 
 The terminal report groups each comparison as newly skipped, newly triggered, unchanged, or unknown; these are trigger-filter classifications, not observed workflow execution or guaranteed savings. The JSON format remains the default to preserve existing consumers.
 

@@ -53,6 +53,8 @@ Results:
 
 JSON is the default and remains compatible with the fixture-mode format used by earlier versions. Add `--format text` for a terminal summary.
 
+`caver-ci --help` lists the commands and examples; `caver-ci -v` (or `caver-ci version`) prints the installed version. Text output uses color in an interactive terminal, honors `NO_COLOR` and `FORCE_COLOR`, and accepts `--color` or `--no-color` on `analyze`. JSON output never includes terminal color codes.
+
 ## Analyze a public repository
 
 Pass two workflow files available on your machine and the GitHub repository whose pull requests you want to inspect:
