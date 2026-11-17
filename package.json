@@ -2,6 +2,7 @@
   "name": "caver-ci",
   "version": "0.3.0",
   "private": true,
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/meow687687/caver-ci.git"
