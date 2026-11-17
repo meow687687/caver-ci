@@ -1,46 +1,16 @@
 # caver-ci
 
-**See how a workflow change affects pull request trigger eligibility.**
+**See how a change to a GitHub Actions trigger affects pull request eligibility.**
 
-caver-ci compares two supplied GitHub Actions workflow files against either offline pull request fixtures or recent public GitHub.com pull requests. It reads YAML as data, uses the official GitHub REST API in repository mode, and never executes workflow commands.
+caver-ci compares two workflow files against pull request file changes. Use local fixtures for an offline check, or ask GitHub.com for recent public pull requests. It reads workflow YAML as data; it never runs workflow commands.
 
-`GitHub.com` · `Read-only` · `Optional GITHUB_TOKEN` · `v0.3`
+`GitHub.com only` · `Read-only` · `Token optional` · `Node 20.19+, 22.12+, or 24+`
 
-> [!IMPORTANT]
-> A `run` decision means the supported trigger filters match the supplied inputs under the stated scenario. It does **not** prove that a workflow ran or that a job passed. Repository mode is a hypothetical evaluation of the supplied workflow configurations against historical PR file changes. It does **not** reconstruct the workflow configuration or execution that existed when each PR was opened.
+> A `run` result means the supported trigger filters match the inputs. It does not say that a workflow ran, that a job passed, or that CI time was saved.
 
----
+## Try it with the included fixtures
 
-## How it works
-
-```text
-Original workflow ─┐
-                   ├─ compare against ────┬─ offline PR fixtures
-                   │                      └─ public GitHub PRs ──► before / after decisions
-Proposed workflow ─┘
-```
-
-| Decision | Meaning |
-| --- | --- |
-| **run** | The supported trigger filters match the fixture. |
-| **skip** | The supported trigger filters do not match the fixture. |
-| **unknown** | The analyzer cannot safely determine eligibility. |
-
-## Prerequisites and install
-
-Requires **Node.js 20.19+, 22.12+, or 24+**, npm, and Git for a source checkout. No GitHub token is needed for offline fixtures or public repository reads. The original caver-ci code and documentation use the MIT License in [LICENSE](LICENSE); copied upstream validation workflows retain their original rights. The v0.3.0 npm package remains private and is not being published.
-
-The install script installs the latest `main` branch into `~/.local` without sudo:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/meow687687/caver-ci/main/install.sh | sh
-```
-
-Ensure `~/.local/bin` is on your `PATH`. To install elsewhere, use `curl -fsSL https://raw.githubusercontent.com/meow687687/caver-ci/main/install.sh | CAVER_CI_PREFIX="$HOME/my-prefix" sh`. The installer downloads the current `main` branch, installs build dependencies, and builds the CLI. To inspect the script before running it, [read install.sh](install.sh).
-
-## Quick start
-
-Clone the repository, install its locked dependencies, and build the compiled CLI:
+Requires Node.js 20.19+, 22.12+, or 24+ and npm. Clone the repository and build the compiled CLI:
 
 ```sh
 git clone https://github.com/meow687687/caver-ci.git
@@ -49,7 +19,7 @@ npm ci
 npm run build
 ```
 
-Run the offline example from the checkout. The command uses the compiled `dist/cli.js`; JSON is the default for scripts, and `--format text` prints a terminal summary:
+Compare the example workflows with four sample pull requests:
 
 ```sh
 node dist/cli.js analyze \
@@ -60,7 +30,7 @@ node dist/cli.js analyze \
   --format text
 ```
 
-The included example compares four PR fixtures. The text summary shows the input scope, platform, sample size, counts for newly skipped, newly triggered, unchanged, and unknown results, followed by each PR identifier and concise reason. An empty sample is reported explicitly. Example output:
+The text report gives a count and reason for each result. The fixture is synthetic; no GitHub request is made.
 
 ```text
 caver-ci · workflow trigger comparison
@@ -76,126 +46,63 @@ Results:
   #PR-104  unknown → unknown  (unknown) — Changed file list is incomplete
 ```
 
-JSON remains the default and includes each decision and its reason, plus the change between them:
+JSON is the default output for scripts and keeps the fixture-mode shape used by earlier versions. Add `--format text` when you want a terminal summary.
 
-| Fixture | Before | After | Change |
-| --- | --- | --- | --- |
-| PR-101 | run | run | unchanged |
-| PR-102 | run | skip | run → skip |
-| PR-103 | skip | run | skip → run |
-| PR-104 | unknown | unknown | unknown |
-
-The CLI reports both the requested `platform` and `supportedPlatform`. The required `--platform` value must identify the actual target. Only `github.com` is supported; other values, including GitHub Enterprise Server, produce `unknown` decisions. Invalid input files or fixture JSON cause a nonzero exit. An uncertain decision is reported in JSON rather than treated as a CLI error.
-
-Invalid fixture records report the array index and the field that needs correction.
-
-## Analyze a public GitHub repository
-
-Repository mode lists recent pull requests, retrieves each PR's changed files, then evaluates both supplied workflow files against that historical file list. It is read-only and sends only `GET` requests.
+To install the latest `main` build into `~/.local`, use the source installer. Review [`install.sh`](install.sh) first; add `~/.local/bin` to your `PATH` after installation.
 
 ```sh
-caver-ci analyze \
-  --repo actions/checkout \
-  --base .github/workflows/original.yml \
-  --proposed .github/workflows/optimized.yml \
-  --platform github.com \
-  --limit 50
+curl -fsSL https://raw.githubusercontent.com/meow687687/caver-ci/main/install.sh | sh
 ```
 
-`--limit` defaults to 50 and accepts 1 through 100. Pull requests are requested in GitHub's `updated` descending order; caver-ci keeps the API order and reports whether more PRs were available beyond the requested limit. It does not sort PRs by number or claim that a limited sample is the full repository history.
+## Check recent pull requests on GitHub
 
-Public repository access does not require a token. This unauthenticated command uses the public API:
+Pass local workflow files and the public repository to inspect. The example uses the included workflows; for a real comparison, point `--base` and `--proposed` at the two workflow files you want to compare.
 
 ```sh
-env -u GITHUB_TOKEN caver-ci analyze \
+env -u GITHUB_TOKEN node dist/cli.js analyze \
   --repo actions/checkout \
   --base fixtures/base.yml \
   --proposed fixtures/proposed.yml \
   --platform github.com \
+  --limit 50 \
   --format text
 ```
 
-For a higher API rate limit, an optional `GITHUB_TOKEN` can read public repository metadata and pull requests. Prompt for it without adding it to shell history, then run the same command:
+Public access works without credentials. To use the higher authenticated API quota, set `GITHUB_TOKEN` in the process environment; do not put it in a command argument or commit it to a file. caver-ci does not print the token or include it in reports. Repository mode sends GitHub REST `GET` requests only.
 
-```sh
-# Bash: enter the token without echoing it or saving it in shell history.
-read -rsp 'GitHub token: ' GITHUB_TOKEN; printf '\n'
-export GITHUB_TOKEN
-caver-ci analyze --repo actions/checkout --base fixtures/base.yml --proposed fixtures/proposed.yml --platform github.com
-unset GITHUB_TOKEN
-```
+The command samples up to 50 recently updated PRs by default; `--limit` accepts 1–100. JSON output remains the default and includes PR metadata and collection completeness. Use [`docs/github-api.md`](docs/github-api.md) for API, pagination, and authentication details.
 
-caver-ci does not print the token or include it in JSON or text reports. A token is optional; the README examples and offline quickstart do not require a real token.
+## What the results mean
 
-The GitHub REST pull request resource does not identify which historical `pull_request` action fired. Repository mode therefore explicitly evaluates the hypothetical `pull_request: opened` action and labels that assumption in JSON. A PR's current state, base branch, timestamps, draft/merged metadata, and file list are reported when the API provides them. Missing base branch metadata yields `unknown` when a branch filter depends on it.
-
-Repository-mode JSON includes collection scope (`requestedLimit`, `pullRequestListComplete`, `pullRequestListHasMore`), PR metadata, changed-file count and completeness, and per-workflow decisions. An empty PR list is reported as empty. If a file request fails or metadata is incomplete, the path-filter decision is `unknown` where changed paths matter. The exact 3,000-file boundary is incomplete because GitHub's REST files endpoint cannot establish whether more files were omitted. caver-ci stops at that limit and does not infer that a returned file represents GitHub Actions' own diff evaluation.
-
-If a later PR-list page fails after earlier records were collected, caver-ci reports the collected sample and marks the PR list incomplete. A failure before any PR records can be collected is reported as a CLI error. `--format text` displays the evaluated repository and a collection note for incomplete or limited samples; `--format json` remains the default and preserves the existing JSON contracts.
-
-API requests have an independent 10-second timeout, at most two retries for transient errors, and bounded waits for rate limits. Authentication errors, permission errors, exhausted rate limits, missing public repositories, and network failures produce sanitized CLI errors; response bodies, authorization headers, and tokens are not printed. Repository mode supports GitHub.com public repositories only, not GHES.
-
-See [GitHub REST mode](docs/github-api.md) for endpoint, authentication, pagination, retry, and completeness details.
-
-## Bring your own fixtures
-
-Pass a JSON array of pull requests with `--prs`:
-
-```json
-[
-  {
-    "id": "PR-1",
-    "baseBranch": "main",
-    "action": "opened",
-    "changedFiles": ["src/app.ts"],
-    "filesComplete": true
-  }
-]
-```
-
-| Field | Description |
+| Result | Meaning |
 | --- | --- |
-| `id` | Unique fixture identifier. |
-| `baseBranch` | The PR's target branch. |
-| `action` | The actual pull request activity type, such as `opened`. |
-| `changedFiles` | Repository-relative paths from the PR diff. |
-| `filesComplete` | Whether the supplied list contains the complete relevant diff. |
+| **run** | The supported `pull_request` filters match the supplied data. |
+| **skip** | A supported filter rules out the pull request. |
+| **unknown** | The available data or workflow syntax is not enough for a safe decision. |
 
-Fixture mode remains offline and does not contact GitHub. The caller is responsible for collecting accurate data. Set `filesComplete` to `false` when the list is incomplete; path-filtered decisions then return `unknown` when the file list matters.
+For the `pull_request` event, supported filters are activity `types`, `branches`, `branches-ignore`, `paths`, and `paths-ignore`. The glob syntax is intentionally narrower than GitHub's: literal patterns, `*` within a path segment, and `**` as a whole segment. Unsupported syntax returns `unknown`.
 
-## Supported behavior
+### Limits
 
-- `pull_request` triggers expressed as a string, event list, or mapping.
-- Activity `types`, `branches`, `branches-ignore`, `paths`, and `paths-ignore`. Branch and path filters must both match when both are present. The default activity types are `opened`, `synchronize`, and `reopened`.
-- Literal patterns, `*` within a path segment, and `**` as a whole segment. Positive filter lists support ordered `!` exclusions and re-inclusions and require at least one positive pattern; ignore lists use positive patterns.
+- GitHub mode supports **public GitHub.com repositories only**. GitHub Enterprise Server is not supported.
+- GitHub's PR file endpoint returns at most 3,000 files. Partial lists, missing relevant metadata, or a list that reaches this ceiling can make a path-filter result `unknown`.
+- The REST PR record does not identify its historical event action or workflow version. Repository mode explicitly tests a hypothetical `pull_request: opened` event against the workflow files you supply now; it does not reconstruct past runs.
+- Workflow jobs, `if` expressions, permissions, required checks, repository settings, outages, and actual execution are outside the analysis.
 
-Unsupported syntax—including `?`, character classes, braces, escapes, pipes, and extglobs—returns `unknown`. This is a narrower pattern language than GitHub's.
+For offline input, pass a JSON array with `--prs`. Each record needs a unique `id`, `baseBranch`, `action`, `changedFiles`, and `filesComplete`; set `filesComplete` to `false` if the file list may be partial. Path decisions become `unknown` when that uncertainty matters. See [`fixtures/prs.json`](fixtures/prs.json) for a working example.
 
-## Limits to keep in mind
-
-- **Platform:** Only GitHub.com is supported. GitHub Enterprise Server 3.19 documents a different diff limit and must not be declared as GitHub.com.
-- **Changed files:** An empty complete list does not match a path filter. In repository mode, an incomplete list or a list that reaches 3,000 files is `unknown` when paths matter. The REST endpoint returns at most 3,000 PR files; reaching exactly 3,000 does not prove completeness. Renamed files include old and new paths; deleted files retain their deleted path. Missing rename/status metadata marks the list incomplete. Fixture order is not assumed to match GitHub's workflow diff order.
-- **Historical data:** Supplied workflow files are evaluated against PR data fetched now. caver-ci does not retrieve historical workflow versions, event delivery payloads, or actual workflow runs. The repository-mode `opened` action is an explicit hypothetical scenario.
-- **Rate limits:** Unauthenticated and authenticated GitHub API quotas differ. Retries are bounded; if GitHub's requested wait exceeds the local cap, caver-ci reports the limit rather than waiting indefinitely.
-- **Workflow coverage:** Only `pull_request` is analyzed. Other events, including `pull_request_target`, do not establish eligibility for this event. Unsupported PR options, activity types, YAML aliases, and malformed YAML return `unknown` where encountered.
-- **Execution:** Workflow schema, jobs, `if` expressions, required checks, permissions, concurrency, repository settings, workflow availability, outages, and actual runs are not fully evaluated. Results are not proof of safety.
-
-GitHub references: [workflow syntax and filter patterns](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onpull_requestpull_request_targetbranchesbranches-ignore) · [path filtering and diff limits](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#git-diff-comparisons) · [pull request events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)
-
-## Validation & development
+## Development
 
 ```sh
+npm ci
 npm run build
 npm run typecheck
+npm run lint
 npm test
 ```
 
-Pull requests run type checking, build, lint, and tests on the supported Node.js minimums. A separate package smoke job installs the packed CLI in a temporary prefix and runs the README example. CI audits the locked dependency tree weekly.
+See [CONTRIBUTING.md](CONTRIBUTING.md), the [architecture guide](docs/architecture.md), and the [validation report](validation/README.md). Synthetic fixtures and mocked API responses are test inputs, not observations of workflow execution.
 
-The [validation report](validation/README.md) records manual expectations for synthetic fixtures against five pinned public workflows, the diff-limit boundary tests, and known risks. It does **not** compare against observed GitHub executions.
+Original caver-ci code and project-authored documentation are licensed under MIT. The linked upstream workflow snapshots in `validation/workflows/` retain their original rights; see [LICENSE](LICENSE) and [validation sources](validation/README.md).
 
-`npm run lint` runs ESLint over the TypeScript sources, tests, and ESLint configuration. CLI output is descriptive analysis of supplied inputs and is not evidence of actual workflow execution or guaranteed CI savings.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and pull request checks. Report security issues using the private reporting guidance in [SECURITY.md](SECURITY.md).
-
-For the code layout, data flow, and documentation maintenance guidance, see the [architecture and maintenance guide](docs/architecture.md).
+The v0.3.0 npm package is private and is not published. Use the source checkout or installer above.
