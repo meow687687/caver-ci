@@ -29,6 +29,16 @@ describe('workflow trigger eligibility', () => {
     expect(check('on:\n  pull_request:\n    types: [closed]', { action: 'closed' })).toBe('run');
     expect(check('on: pull_request', { action: 'future_action' })).toBe('unknown');
   });
+  it('applies ordered exclusions and re-inclusions to branch filters', () => {
+    const yaml = "on:\n  pull_request:\n    branches: ['release/**', '!release/old/**', 'release/old/keep/**']";
+    expect(check(yaml, { baseBranch: 'release/v1' })).toBe('run');
+    expect(check(yaml, { baseBranch: 'release/old/v1' })).toBe('skip');
+    expect(check(yaml, { baseBranch: 'release/old/keep/v1' })).toBe('run');
+  });
+  it('returns unknown for pipe alternation in branch patterns', () => {
+    const yaml = "on:\n  pull_request:\n    branches: ['release/main|dev']";
+    expect(check(yaml, { baseBranch: 'dev' })).toBe('unknown');
+  });
   it('does not guess unsupported, malformed or incomplete input', () => {
     expect(check('on: [')).toBe('unknown');
     expect(check('name: CI')).toBe('unknown');
@@ -43,6 +53,13 @@ describe('workflow trigger eligibility', () => {
     expect(() => parseFixtures([{}])).toThrow();
     expect(() => parseFixtures([pr, pr])).toThrow();
     expect(parseFixtures([pr])).toEqual([pr]);
+    expect(parseFixtures([])).toEqual([]);
+  });
+  it('identifies the fixture field and index for invalid records', () => {
+    expect(() => parseFixtures([{ ...pr, baseBranch: '' }])).toThrow(/index 0.*non-empty baseBranch/i);
+    expect(() => parseFixtures([{ ...pr, changedFiles: [''] }])).toThrow(/index 0.*changedFiles to be an array/i);
+    expect(() => parseFixtures([{ ...pr, filesComplete: 'yes' }])).toThrow(/index 0.*filesComplete to be a boolean/i);
+    expect(() => parseFixtures([pr, { ...pr, action: '' }])).toThrow(/index 1.*non-empty action/i);
   });
 });
 
@@ -89,7 +106,7 @@ describe('audit regressions', () => {
     expect(check('on: [pull_request, 2]')).toBe('unknown');
     expect(check('on:\n  pull_request: false')).toBe('unknown');
   });
-  it.each(['src/?.ts', 'src/[ab].ts', 'src/{a,b}.ts', 'src/+(a).ts', 'src/foo**bar', '!docs/**'])('rejects unsupported pattern %s', pattern => {
+  it.each(['src/?.ts', 'src/[ab].ts', 'src/{a,b}.ts', 'src/+(a).ts', 'src/foo**bar', 'release/main|dev', '!docs/**'])('rejects unsupported pattern %s', pattern => {
     expect(check(`on:\n  pull_request:\n    paths: ${JSON.stringify([pattern])}`)).toBe('unknown');
   });
   it('treats unknown types, conflicting filters, and aliases as unknown', () => {
@@ -102,6 +119,12 @@ describe('audit regressions', () => {
     const changedFiles = Array.from({ length: 3001 }, (_, i) => `src/${i}.ts`);
     expect(check("on:\n  pull_request:\n    paths: ['src/**']", { changedFiles })).toBe('unknown');
     expect(check('on: pull_request', { changedFiles })).toBe('run');
+  });
+  it('rejects absolute, traversal, and empty path patterns conservatively', () => {
+    for (const pattern of ['/src/**', 'src/../secrets/**', 'src//app.ts', '']) {
+      const yaml = `on:\n  pull_request:\n    paths: ${JSON.stringify([pattern])}`;
+      expect(check(yaml)).toBe('unknown');
+    }
   });
   it.each([null, {}, [null], [{ ...pr, id: '' }], [{ ...pr, changedFiles: [3] }], [{ ...pr, filesComplete: 'yes' }]])('rejects invalid fixture input', input => {
     expect(() => parseFixtures(input)).toThrow();
